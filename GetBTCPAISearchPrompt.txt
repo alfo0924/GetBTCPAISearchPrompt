@@ -4088,6 +4088,14 @@ combine these two code
 
 
 ---------------
+---------------
+---------------
+
+
+
+
+
+
 
 here's the project path:
 C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction
@@ -4338,4 +4346,7 @@ help me rewrite /update correct version enable let the page works as fine as loc
 
 
 
+
+---------------
+---------------
 ---------------
