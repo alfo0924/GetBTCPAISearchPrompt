@@ -3710,6 +3710,386 @@ app.use(express.static(path.join(__dirname, )));
 ---------------
 
 
+now it can show the page on github but when cliking the search button it can't show data query resilts from database 
+
+here's the code :
+
+html:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = ""; // Clear previous content
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Date: ${price.Date}, Close: ${price.Close}, Volume: ${price.Volume}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  // Changed timezone to Asia/Taipei
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+app.js :
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use(cors());
+
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+
+module.exports = app;
+
+
+package.json:
+{
+  "name": "getbtcpricewithseachfunction",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "deploy": "gh-pages -d public"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}
+
+file path:
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\.github
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\bin
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\db
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\db\sqlite.db
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\node_modules
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\images
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\javascripts
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\stylesheets
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\stylesheets\style.css
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\routes
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\app.js
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\index.html
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\package.json
+C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\package-lock.json
+
+
+
+re-write or debug to let the online page can show the query results on page after clicking the search button 
+
+
+
+
+---------------
+
+
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+// Serve static files from the root directory
+app.use(express.static(path.join(__dirname)));
+
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+
+
+
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.use(cors());
+
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+
+module.exports = app;
+
+
+
+
+combine these two code 
+
+
+
+
+
+---------------
+
+
 
 
 ---------------
