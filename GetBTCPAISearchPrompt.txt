@@ -1,0 +1,903 @@
+i'ver set my path c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\bin c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\db c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\db\sqlite.db c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\node_modules c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\images c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\javascripts c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\stylesheets c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\stylesheets\style.css c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\public\index.html c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\routes c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\app.js c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\package.json c:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\package-lock.json
+on express 
+
+here's my app.js file :
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Create database connection
+const dbPath = path.resolve(__dirname, 'C:\\Users\\user\\WebstormProjects\\GetBTCPriceWithSeachFunction\\db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+        createTable();
+        insertData();
+    }
+});
+
+// Function to create btc_prices table
+const createTable = () => {
+    const createTableSQL = `
+        CREATE TABLE IF NOT EXISTS btc_prices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date DATE NOT NULL,
+            close DECIMAL(10, 2) NOT NULL,
+            volume BIGINT NOT NULL
+        )
+    `;
+    db.run(createTableSQL, (err) => {
+        if (err) {
+            console.error('Error creating table:', err.message);
+        } else {
+            console.log('Table created successfully');
+        }
+    });
+};
+
+// Function to insert data into btc_prices table
+const insertData = () => {
+    const insertSQL = `
+        INSERT INTO btc_prices (date, close, volume) VALUES
+                                                         ('2024-05-25', 68536.88, 28293212160),
+                                                         ('2024-05-23', 67929.56, 41895680979),
+                                                         ('2024-05-22', 69122.34, 32802561717),
+                                                         ('2024-05-21', 70136.53, 46932005990),
+                                                         ('2024-05-20', 71448.20, 43850655717)
+    `;
+    db.run(insertSQL, (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+        } else {
+            console.log('Data inserted successfully');
+        }
+    });
+};
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT * FROM btc_prices WHERE date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+// Endpoint for inserting data into btc_prices table
+app.post('/insert', (req, res) => {
+    const { date, close, volume } = req.body;
+
+    // Insert data into btc_prices table
+    const insertSQL = `INSERT INTO btc_prices (date, close, volume) VALUES (?, ?, ?)`;
+    db.run(insertSQL, [date, close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+
+here's my html :
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = "";
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Price: ${price.price}, Date: ${price.date}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  <!-- Changed timezone to Asia/Taipei -->
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+<script>
+    function displayData(data, startDate, endDate) {
+        var pricesContainer = document.getElementById('pricesContainer');
+        pricesContainer.innerHTML = '';
+
+        // Display the selected date range
+        var dateRangeElement = document.createElement('p');
+        dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+        pricesContainer.appendChild(dateRangeElement);
+
+        // Display queried data
+        if (data.length === 0) {
+            var noDataElement = document.createElement('p');
+            noDataElement.textContent = 'No data available for the selected date range.';
+            pricesContainer.appendChild(noDataElement);
+        } else {
+            data.forEach(price => {
+                var priceElement = document.createElement('p');
+                priceElement.textContent = `Price: ${price.close}, Date: ${price.date}`; // Corrected to display 'price.close'
+                pricesContainer.appendChild(priceElement);
+            });
+        }
+    }
+
+</script>
+
+</body>
+</html>
+
+
+here's my sqlite table info: 
+CREATE TABLE 'BTCUSD' ('Date' TEXT,'Open' REAL,'High' REAL,'Low' REAL,'Close' REAL,'Adj_Close' REAL,'Volume' INTEGER);
+INSERT INTO 'BTCUSD' ('Date','Open','High','Low','Close','Adj_Close','Volume') VALUES 
+
+1.i would like to fix my app.js to fix database query prompt which im html when i initate the search query it will shows date, pirce(which in database's close ) ,and volume 
+
+
+
+----
+
+
+help me re write the app.js to get the correct database form command 
+here's the sqlite info of sqlite.db :
+CREATE TABLE 'BTCUSD' ('Date' TEXT,'Open' REAL,'High' REAL,'Low' REAL,'Close' REAL,'Adj_Close' REAL,'Volume' INTEGER);
+INSERT INTO 'BTCUSD' ('Date','Open','High','Low','Close','Adj_Close','Volume') VALUES 
+
+here's the app.js code needs to be correct:
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Create database connection
+const dbPath = path.resolve(__dirname, 'C:\\Users\\user\\WebstormProjects\\GetBTCPriceWithSeachFunction\\db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+        createTable();
+        insertData();
+    }
+});
+
+// Function to create btc_prices table
+const createTable = () => {
+    const createTableSQL = `
+        CREATE TABLE IF NOT EXISTS btc_prices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date DATE NOT NULL,
+            close DECIMAL(10, 2) NOT NULL,
+            volume BIGINT NOT NULL
+        )
+    `;
+    db.run(createTableSQL, (err) => {
+        if (err) {
+            console.error('Error creating table:', err.message);
+        } else {
+            console.log('Table created successfully');
+        }
+    });
+};
+
+// Function to insert data into btc_prices table
+const insertData = () => {
+    const insertSQL = `
+        INSERT INTO btc_prices (date, close, volume) VALUES
+                                                         ('2024-05-25', 68536.88, 28293212160),
+                                                         ('2024-05-23', 67929.56, 41895680979),
+                                                         ('2024-05-22', 69122.34, 32802561717),
+                                                         ('2024-05-21', 70136.53, 46932005990),
+                                                         ('2024-05-20', 71448.20, 43850655717)
+    `;
+    db.run(insertSQL, (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+        } else {
+            console.log('Data inserted successfully');
+        }
+    });
+};
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT date, close, volume FROM btc_prices WHERE date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+// Endpoint for inserting data into btc_prices table
+app.post('/insert', (req, res) => {
+    const { date, close, volume } = req.body;
+
+    // Insert data into btc_prices table
+    const insertSQL = `INSERT INTO btc_prices (date, close, volume) VALUES (?, ?, ?)`;
+    db.run(insertSQL, [date, close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    console.log('Received request to search data between dates:', startDate, 'and', endDate);
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT date, close, volume FROM btc_prices WHERE date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data retrieved from the database:', rows);
+            res.json(rows);
+        }
+    });
+});
+
+
+
+
+
+-----
+
+
+how to let html to get app.js data ?
+
+
+
+here's app js code :
+
+
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Create database connection
+const dbPath = path.resolve(__dirname, 'C:\\Users\\user\\WebstormProjects\\GetBTCPriceWithSeachFunction\\db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    console.log('Received request to search data between dates:', startDate, 'and', endDate);
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data retrieved from the database:', rows);
+            res.json(rows);
+        }
+    });
+});
+
+// Endpoint for inserting data into BTCUSD table
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+
+    // Insert data into BTCUSD table
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+ 
+
+ here's html : 
+ <!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = "";
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Price: ${price.price}, Date: ${price.date}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  <!-- Changed timezone to Asia/Taipei -->
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+<script>
+    function displayData(data, startDate, endDate) {
+        var pricesContainer = document.getElementById('pricesContainer');
+        pricesContainer.innerHTML = '';
+
+        // Display the selected date range
+        var dateRangeElement = document.createElement('p');
+        dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+        pricesContainer.appendChild(dateRangeElement);
+
+        // Display queried data
+        if (data.length === 0) {
+            var noDataElement = document.createElement('p');
+            noDataElement.textContent = 'No data available for the selected date range.';
+            pricesContainer.appendChild(noDataElement);
+        } else {
+            data.forEach(price => {
+                var priceElement = document.createElement('p');
+                priceElement.textContent = `Price: ${price.close}, Date: ${price.date}`; // Corrected to display 'price.close'
+                pricesContainer.appendChild(priceElement);
+            });
+        }
+    }
+
+</script>
+
+</body>
+</html>
+
+
+i would like the html search event that able to print data too 
+
+like : 
+"C:\Program Files\nodejs\node.exe" C:\Users\user\WebstormProjects\GetBTCPriceWithSeachFunction\bin\www
+Server is running on port 3001
+  getbtcpricewithseachfunction:server Listening on port 3000 +0ms
+Connected to the database
+GET / 304 8.457 ms - -
+Received request to search data between dates: 2024-05-15 and 2024-05-19
+Data retrieved from the database: [                                
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 }
+]
+GET /search?startDate=2024-05-15&endDate=2024-05-19 200 8.622 ms - 318
+Received request to search data between dates: 2024-05-15 and 2024-05-19
+Data retrieved from the database: [
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 }
+]
+GET /search?startDate=2024-05-15&endDate=2024-05-19 304 3.573 ms - -
+Received request to search data between dates: 2024-05-15 and 2024-05-19
+Data retrieved from the database: [
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 }
+]
+GET /search?startDate=2024-05-15&endDate=2024-05-19 304 3.387 ms - -
+Received request to search data between dates: 2024-05-15 and 2024-05-19
+Data retrieved from the database: [
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 }
+]
+GET /search?startDate=2024-05-15&endDate=2024-05-19 304 3.178 ms - -
+Received request to search data between dates: 2024-05-15 and 2024-05-19
+Data retrieved from the database: [
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 }
+]
+GET /search?startDate=2024-05-15&endDate=2024-05-19 304 2.907 ms - -
+
+
+
+--------------
+
+on the html page it shows "START DATE: 
+2024/05/06
+ END DATE: 
+2024/05/19
+ Search
+DATE RANGE: 2024-05-06 TO 2024-05-19
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED
+
+PRICE: UNDEFINED, DATE: UNDEFINED" how to solve this ?
+
+----
+
+i would like the html page show this 
+
+Received request to search data between dates: 2024-05-12 and 2024-05-21
+Data retrieved from the database: [                                
+  { Date: '2024-05-12', Close: 61448.394531, Volume: 13800459405 },
+  { Date: '2024-05-13', Close: 62901.449219, Volume: 27889181179 },
+  { Date: '2024-05-14', Close: 61552.789063, Volume: 28186271527 },
+  { Date: '2024-05-15', Close: 66267.492188, Volume: 39815167074 },
+  { Date: '2024-05-16', Close: 65231.582031, Volume: 31573077994 },
+  { Date: '2024-05-17', Close: 67051.875, Volume: 28031279310 },
+  { Date: '2024-05-18', Close: 66940.804688, Volume: 16712277406 },
+  { Date: '2024-05-19', Close: 66278.367188, Volume: 19249094538 },
+  { Date: '2024-05-20', Close: 71448.195313, Volume: 43850655717 },
+  { Date: '2024-05-21', Close: 70136.53125, Volume: 46932005990 },
+  { Date: '2024-05-21', Close: 70136.53, Volume: 46932005990 },
+  { Date: '2024-05-20', Close: 71448.2, Volume: 43850655717 }
+
+
+
+
+after the search button initiate just show the date: , close, Volume 
+
+here's my html : 
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = "";
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Price: ${price.close}, Date: ${price.date}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  <!-- Changed timezone to Asia/Taipei -->
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+
+here's my app.js :
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Create database connection
+const dbPath = path.resolve(__dirname, 'C:\\Users\\user\\WebstormProjects\\GetBTCPriceWithSeachFunction\\db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    console.log('Received request to search data between dates:', startDate, 'and', endDate);
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data retrieved from the database:', rows);
+            res.json(rows);
+        }
+    });
+});
+
+// Endpoint for inserting data into BTCUSD table
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+
+    // Insert data into BTCUSD table
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+
+help me update it 
+
+
+---------------
+
+
