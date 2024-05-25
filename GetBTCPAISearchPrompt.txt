@@ -1634,4 +1634,209 @@ html:
  when upload  html page online it wont see any data printout after search button clicked(query event of database )  but in the local it can show the data ,how to sovle this ? 
 
 
- -----
+ -------------
+
+
+
+ app.js:
+ const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors'); // Import cors module
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors()); // Enable CORS for all routes
+
+// Create database connection
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+// Search endpoint for filtering data between dates
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    console.log('Received request to search data between dates:', startDate, 'and', endDate);
+
+    // Query database for data between startDate and endDate
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+// Endpoint for inserting data into BTCUSD table
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+
+    // Insert data into BTCUSD table
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+const cors = require('cors');
+const app = express();
+app.use(cors()); // Enable CORS for all routes
+
+
+module.exports = app;
+
+
+
+html :
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = "";
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Date: ${price.Date}, Close: ${price.Close}, Volume: ${price.Volume}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  <!-- Changed timezone to Asia/Taipei -->
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+
+
+
+when upload the project online the page wont see any data printout after the search button clicked(query event of database )  but in the local sever can show the data query result ,how to sovle this ? 
+
+
+
+
+
+
+
+------------------------
