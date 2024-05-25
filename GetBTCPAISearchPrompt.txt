@@ -4350,3 +4350,712 @@ help me rewrite /update correct version enable let the page works as fine as loc
 ---------------
 ---------------
 ---------------
+
+
+
+
+
+Done
+18:22:26.058: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false add --ignore-errors -A -- node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+warning: adding embedded git repository: node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+hint: You've added another git repository inside your current repository.
+hint: Clones of the outer repository will not contain the contents of
+hint: the embedded repository and will not know how to obtain it.
+hint: If you meant to add a submodule, use:
+hint: 
+hint: 	git submodule add <url> node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+hint: 
+hint: If you added this path by mistake, you can remove it from the
+hint: index with:
+hint: 
+hint: 	git rm --cached node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+hint: 
+hint: See "git help submodule" for more information.
+18:22:28.526: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false add --ignore-errors -A -f -- package.json node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+18:22:28.660: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false commit -F C:\Users\user\AppData\Local\Temp\git-commit-msg-.txt --
+[gh-pages e99051c] v2.335 bv reupdate
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+ create mode 160000 node_modules/.cache/gh-pages/https!github.com!alfo0924!GetBTCPriceWithSeachFunction.git
+18:22:30.260: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false push --progress --porcelain origin refs/heads/gh-pages:gh-pages
+error: failed to push some refs to 'https://github.com/alfo0924/GetBTCPriceWithSeachFunction.git'
+hint: Updates were rejected because the remote contains work that you do
+To https://github.com/alfo0924/GetBTCPriceWithSeachFunction.git
+!	refs/heads/gh-pages:refs/heads/gh-pages	[rejected] (fetch first)
+Done
+hint: not have locally. This is usually caused by another repository pushing
+hint: to the same ref. You may want to first integrate the remote changes
+hint: (e.g., 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+18:26:22.016: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false add --ignore-errors -A -f -- index.html app.js package.json
+warning: in the working copy of 'app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+18:26:22.134: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false commit -F C:\Users\user\AppData\Local\Temp\git-commit-msg-.txt --
+[gh-pages 7e4d0f0] v2.335 bv reupdate
+ 3 files changed, 3 insertions(+), 2 deletions(-)
+18:26:24.244: [GetBTCPriceWithSeachFunction] git -c credential.helper= -c core.quotepath=false -c log.showSignature=false push --progress --porcelain origin refs/heads/gh-pages:gh-pages
+error: failed to push some refs to 'https://github.com/alfo0924/GetBTCPriceWithSeachFunction.git'
+hint: Updates were rejected because the remote contains work that you do
+To https://github.com/alfo0924/GetBTCPriceWithSeachFunction.git
+hint: not have locally. This is usually caused by another repository pushing
+!	refs/heads/gh-pages:refs/heads/gh-pages	[rejected] (fetch first)
+hint: to the same ref. You may want to first integrate the remote changes
+Done
+hint: (e.g., 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+
+
+
+
+
+---------------
+---------------
+
+
+html:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = ""; // Clear previous content
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = "No data available for the selected date range.";
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Date: ${price.Date}, Close: ${price.Close}, Volume: ${price.Volume}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  // Changed timezone to Asia/Taipei
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+
+app.js:
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
+
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+json:
+{
+  "name": "getbtcpricewithseachfunction",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "sqlite3": "^5.1.7"
+  }
+}
+
+
+
+i would like to let the project function as the local works which whem you click the search button and the page will show the data query from database
+
+
+
+
+
+
+
+
+
+---------------
+
+
+
+
+
+this is my projectpath:
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\.github
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\bin
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\node_modules
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\public
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\public\images
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\public\javascripts
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\public\stylesheets
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\public\index.html
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\routes
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\routes\index.js
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\routes\users.js
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\app.js
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\package.json
+C:\Users\user\WebstormProjects\GetBTCPriceLiveOnWeb\package-lock.json
+
+
+
+app.js :
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+// Middleware setup
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname))); // Serve static files from the root directory
+app.use(cors());
+
+// Database setup
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+// Routes
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html')); // Serve the HTML file
+});
+
+// Search endpoint
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+// Insert data endpoint
+app.post('/insert', (req, res) => {
+    const { date, open, high, low, close, adj_close, volume } = req.body;
+    const insertSQL = `INSERT INTO BTCUSD (Date, Open, High, Low, Close, Adj_Close, Volume) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    db.run(insertSQL, [date, open, high, low, close, adj_close, volume], (err) => {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            console.log('Data inserted successfully');
+            res.status(200).json({ message: 'Data inserted successfully' });
+        }
+    });
+});
+
+// Server setup
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+html:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById("startDate").value;
+    var endDate = document.getElementById("endDate").value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById("pricesContainer");
+    pricesContainer.innerHTML = ""; // Clear previous content
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement("p");
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.message) {
+      var noDataElement = document.createElement("p");
+      noDataElement.textContent = data.message;
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement("p");
+        priceElement.textContent = `Date: ${price.Date}, Close: ${price.Close}, Volume: ${price.Volume}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+</script>
+
+<!-- Initialize TradingView chart -->
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": 980,
+    "height": 610,
+    "symbol": "BTCUSD",
+    "interval": "D",
+    "timezone": "Asia/Taipei",  // Changed timezone to Asia/Taipei
+    "theme": "light",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#f1f3f6",
+    "enable_publishing": false,
+    "allow_symbol_change": true,
+    "container_id": "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+json:
+{
+  "name": "getbtcpricewithseachfunction",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "deploy": "gh-pages -d public"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}
+
+
+help me debug and re-write/update  the code 
+
+
+
+
+
+
+
+---------------
+---------------
+---------------
+
+
+
+
+i would like to deploy this project on netlify and make the backend works 
+here's my code:
+
+app.js :
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+
+const app = express();
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(cors());
+
+// Serve index.html from the root directory
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Database configuration
+const dbPath = path.join(__dirname, 'db', 'sqlite.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error connecting to the database:', err.message);
+    } else {
+        console.log('Connected to the database');
+    }
+});
+
+// Endpoint to query data
+app.get('/search', (req, res) => {
+    const { startDate, endDate } = req.query;
+    const query = `SELECT Date, Close, Volume FROM BTCUSD WHERE Date BETWEEN ? AND ?`;
+    db.all(query, [startDate, endDate], (err, rows) => {
+        if (err) {
+            console.error('Error executing query:', err.message);
+            res.status(500).json({ error: 'Internal server error' });
+        } else {
+            if (rows.length === 0) {
+                console.log('No data found for the specified date range');
+                res.status(404).json({ message: 'No data found' });
+            } else {
+                console.log('Data retrieved from the database:', rows);
+                res.json(rows);
+            }
+        }
+    });
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+html:
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Bitcoin Chart</title>
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <style>
+    body {
+      padding: 150px;
+      background-color: rgba(222, 222, 222, 0.74);
+      background-blend-mode: multiply;
+      align-items: center;
+      text-decoration: none;
+      align-content: center;
+      justify-content: center;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bitcoin</h1>
+
+<div class="tradingview-widget-container">
+  <div id="tradingview_12345"></div>
+</div>
+
+<br>
+<br>
+
+<!-- Date input fields and search button -->
+<label for="startDate">Start Date:</label>
+<input type="date" id="startDate" name="startDate">
+<label for="endDate">End Date:</label>
+<input type="date" id="endDate" name="endDate">
+<button onclick="searchByDateRange()">Search</button>
+
+<!-- Container to display queried data -->
+<div id="pricesContainer"></div>
+
+<!-- JavaScript for handling date range search and displaying data -->
+<script>
+  function searchByDateRange() {
+    var startDate = document.getElementById('startDate').value;
+    var endDate = document.getElementById('endDate').value;
+
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    fetch(`/search?startDate=${startDate}&endDate=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Response Data:", data);
+              displayData(data, startDate, endDate); // Pass startDate and endDate to displayData function
+            })
+            .catch(error => console.error('Error:', error));
+  }
+
+  function displayData(data, startDate, endDate) {
+    var pricesContainer = document.getElementById('pricesContainer');
+    pricesContainer.innerHTML = ''; // Clear previous content
+
+    // Display the selected date range
+    var dateRangeElement = document.createElement('p');
+    dateRangeElement.textContent = `Date Range: ${startDate} to ${endDate}`;
+    pricesContainer.appendChild(dateRangeElement);
+
+    // Display queried data
+    if (data.length === 0) {
+      var noDataElement = document.createElement('p');
+      noDataElement.textContent = 'No data available for the selected date range.';
+      pricesContainer.appendChild(noDataElement);
+    } else {
+      data.forEach(price => {
+        var priceElement = document.createElement('p');
+        priceElement.textContent = `Date: ${price.Date}, Close: ${price.Close}, Volume: ${price.Volume}`;
+        pricesContainer.appendChild(priceElement);
+      });
+    }
+  }
+
+  // Initialize TradingView chart
+  new TradingView.widget({
+    width: 980,
+    height: 610,
+    symbol: "BTCUSD",
+    interval: "D",
+    timezone: "Asia/Taipei",  // Changed timezone to Asia/Taipei
+    theme: "light",
+    style: 1,
+    locale: "en",
+    toolbar_bg: "#f1f3f6",
+    enable_publishing: false,
+    allow_symbol_change: true,
+    container_id: "tradingview_12345"
+  });
+</script>
+
+</body>
+</html>
+
+package.json:
+{
+  "name": "getbtcpricewithseachfunction",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "deploy": "gh-pages -d public"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "morgan": "~1.9.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}
+
+
+
+
+i would like to deploy this project on netlify and make the backend works 
+
+please re-write a version that can suits netlify and could able to run backend 
+
+
+
+---------------
+---------------
+---------------
