@@ -5059,3 +5059,55 @@ please re-write a version that can suits netlify and could able to run backend
 ---------------
 ---------------
 ---------------
+
+--------------------
+
+
+
+this is a code of getting the live price of bitcoin 
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="60">
+<title>Bitcoin Live Price</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h1>Bitcoin Live Price</h1>
+<div id="price"></div>
+<script>
+function getBitcoinPrice() {
+  $.get("https://api.coindesk.com/v1/bpi/currentprice.json", function(data) {
+    var price = data.bpi.USD.rate;
+    var change = data.bpi.USD.change;
+    var changePercent = data.bpi.USD.changesPercentage;
+    $("#price").html(price + " " + change + " " + changePercent);
+  });
+}
+getBitcoinPrice();
+setInterval(getBitcoinPrice,50); // Refresh every minute
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------
